@@ -147,7 +147,10 @@ mod tests {
             ))
             .create();
         let ep = discover(&format!("{base}/realm/"))?;
-        assert_eq!(ep.device_authorization_endpoint.as_str(), format!("{base}/device"));
+        assert_eq!(
+            ep.device_authorization_endpoint.as_str(),
+            format!("{base}/device")
+        );
         assert_eq!(ep.token_endpoint.as_str(), format!("{base}/token"));
         assert!(ep.revocation_endpoint.is_none());
         Ok(())

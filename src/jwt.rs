@@ -23,9 +23,15 @@ mod tests {
     fn decode_payload() {
         let body = URL_SAFE_NO_PAD.encode(r#"{"exp":1700000000,"groups":["a"]}"#);
         let token = format!("header.{body}.sig");
-        assert_eq!(payload(&token).ok().map(|p| p["groups"][0].clone()), Some("a".into()));
+        assert_eq!(
+            payload(&token).ok().map(|p| p["groups"][0].clone()),
+            Some("a".into())
+        );
         assert_eq!(exp(&token), Some(1_700_000_000));
         assert_eq!(exp("not-a-jwt"), None);
-        assert_eq!(exp(&format!("h.{}.s", URL_SAFE_NO_PAD.encode(r#"{"exp":0}"#))), None);
+        assert_eq!(
+            exp(&format!("h.{}.s", URL_SAFE_NO_PAD.encode(r#"{"exp":0}"#))),
+            None
+        );
     }
 }

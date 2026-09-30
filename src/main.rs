@@ -22,7 +22,12 @@ struct Args {
     #[arg(long, env = "CHEPSTOW_ISSUER", global = true)]
     issuer: Option<String>,
     /// OIDC client ID
-    #[arg(long, env = "CHEPSTOW_CLIENT_ID", default_value = "chepstow", global = true)]
+    #[arg(
+        long,
+        env = "CHEPSTOW_CLIENT_ID",
+        default_value = "chepstow",
+        global = true
+    )]
     client_id: String,
     /// LiteLLM base URL
     #[arg(long, env = "CHEPSTOW_BASE_URL", global = true)]
@@ -154,7 +159,11 @@ fn main() -> Result<()> {
             } else {
                 "expired".to_string()
             };
-            println!("{:<12} {} ({left})", "exp", exp.format("%Y-%m-%d %H:%M:%S %:z"));
+            println!(
+                "{:<12} {} ({left})",
+                "exp",
+                exp.format("%Y-%m-%d %H:%M:%S %:z")
+            );
         }
         Command::Models => {
             let url = format!("{}/v1/models", base_url.trim_end_matches('/'));
@@ -166,7 +175,10 @@ fn main() -> Result<()> {
                 bail!("`{url}` returned {}.", resp.status());
             }
             let models: serde_json::Value = resp.json()?;
-            for m in models["data"].as_array().context("No `data` in response.")? {
+            for m in models["data"]
+                .as_array()
+                .context("No `data` in response.")?
+            {
                 println!("{}", m["id"].as_str().unwrap_or_default());
             }
         }
