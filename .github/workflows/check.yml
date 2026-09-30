@@ -1,0 +1,96 @@
+name: Check
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changelog:
+    name: Changelog format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - name: Install kacl
+        run: |
+          python -m venv ~/venv
+          ~/venv/bin/pip install python-kacl
+      - name: Check changelog format
+        run: ~/venv/bin/kacl-cli verify
+  code-checks:
+    name: Tests and lints
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: "x86_64-unknown-linux-gnu"
+            os: "ubuntu-latest"
+            cross: false
+          - target: "aarch64-unknown-linux-gnu"
+            os: "ubuntu-latest"
+            cross: true
+          - target: "x86_64-unknown-linux-musl"
+            os: "ubuntu-latest"
+            cross: false
+          - target: "aarch64-unknown-linux-musl"
+            os: "ubuntu-latest"
+            cross: true
+          - target: "x86_64-pc-windows-gnu"
+            os: "ubuntu-latest"
+            cross: true
+          - target: "aarch64-apple-darwin"
+            os: "macOS-latest"
+            cross: false
+          - target: "x86_64-apple-darwin"
+            os: "macOS-latest"
+            cross: true
+          - target: "x86_64-unknown-freebsd"
+            os: "ubuntu-latest"
+            cross: true
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0  # This is needed so that git-describe works properly to set the version
+          persist-credentials: false
+      - name: install MUSL
+        if: contains(matrix.target, 'musl')
+        run: sudo apt install musl-tools
+      - name: Install toolchain
+        run: rustup toolchain install stable --target="${{ matrix.target }}" --component="clippy,rustfmt"
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - name: Install cross
+        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
+        with:
+          tool: cross
+        if: matrix.cross
+      - name: Formatting
+        run: cargo fmt --check
+      - name: Linting
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --target="${{ matrix.target }}"
+        if: ${{ ! matrix.cross }}
+      - name: Build
+        run: cross build --target="${{ matrix.target }}"
+        if: matrix.cross
+      - name: Test
+        run: cargo test --target="${{ matrix.target }}"
+        if: ${{ ! matrix.cross }}
