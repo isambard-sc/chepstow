@@ -21,7 +21,7 @@ tests/cli.rs   runs the binary against mockito
 - Public client: `AuthType::RequestBody`, no secret. The `chepstow` client ID is a placeholder until the real Keycloak client exists. Don't use the confidential `litellm` client.
 - The oauth2 crate handles polling (`authorization_pending`, `slow_down` +5s, `expired_token`, `access_denied`). The sleep function is injected so tests don't wait.
 - `expires_at` and `refresh_expires_at` come from each token's JWT `exp` claim. Keycloak refresh tokens are JWTs, and offline tokens have no expiry, giving `None`. Times are unix seconds.
-- `token` prints only the token on stdout. On failure it prints `run chepstow login` on stderr and exits 1, and never starts a login. Other human-readable output also goes to stderr.
+- `token` prints only the token on stdout. On failure it prints an error telling the user to run `chepstow login` on stderr and exits 1, and never starts a login. Other human-readable output also goes to stderr.
 - `token` refreshes using the issuer and client ID stored in the cache, not the current flags.
 - `whoami` reads the cache without refreshing. Missing claims print as `<missing>` so a missing Keycloak mapper is obvious.
 - `logout` warns but still deletes the cache if revocation fails.
@@ -36,7 +36,7 @@ tests/cli.rs   runs the binary against mockito
   cargo test
   ```
 - Add user-visible changes to the `Unreleased` section of CHANGELOG.md (Keep a Changelog format; CI checks it with kacl).
-- CI is in `.github/workflows/` (check, build, release), ported from Isambard's clifton. Actions are pinned by SHA.
+- CI is in `.github/workflows/` (check, build, release, and actions for actionlint + zizmor), ported from Isambard's clifton. Actions are pinned by SHA. Dependabot (`.github/dependabot.yml`) updates cargo weekly and actions monthly.
 
 ## Not yet working end to end
 

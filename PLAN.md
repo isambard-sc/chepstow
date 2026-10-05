@@ -14,8 +14,8 @@ flow against the same Keycloak. **Reference only — don't commit it or depend o
 Copy its approach:
 
 - `clifton/src/auth.rs`: `oauth2` 5 `BasicClient` + `exchange_device_code()` /
-  `exchange_device_access_token()`, `AuthType::RequestBody` (public client),
-  browser open + QR code. It hardcodes the Keycloak paths and has a TODO to use
+  `exchange_device_access_token()`, `AuthType::RequestBody` (public client).
+  It hardcodes the Keycloak paths and has a TODO to use
   discovery. Do that TODO here.
 - `clifton/src/cache.rs`: cache dir under `dirs::cache_dir()`, files written `0600`.
 - `clifton/Cargo.toml`: dependency set (blocking reqwest + rustls, no tokio),
@@ -59,9 +59,9 @@ Docs: https://docs.litellm.ai/docs/proxy/token_auth
 
 ## Commands
 
-- `chepstow login [--env dev|prod] [--no-browser] [--qr]`
-  - Runs the device flow: print `verification_uri_complete` (optionally open
-    the browser and/or show a QR code), then poll.
+- `chepstow login [--env dev|prod]`
+  - Runs the device flow: print `verification_uri_complete`, then poll.
+    Never open a browser.
   - Handle `authorization_pending`, `slow_down` (+5s interval), `expired_token`
     and `access_denied`. The `oauth2` crate does this; check its behaviour
     in tests.
@@ -109,8 +109,8 @@ src/jwt.rs     unverified payload decode for whoami / expiry
 ```
 
 - Crates: `clap`, `anyhow`, `oauth2` 5 (`reqwest-blocking`, `rustls-tls`),
-  `reqwest` (blocking, json, rustls), `serde`, `serde_json`, `url`, `dirs`,
-  `webbrowser`, `qrcode`, `base64`, `chrono`.
+  `reqwest` (blocking, json, rustls), `serde`, `serde_json`, `dirs`,
+  `base64`, `chrono`.
 - Dev dependency: `mockito`.
 - No async runtime.
 
