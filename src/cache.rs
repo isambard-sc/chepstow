@@ -28,7 +28,7 @@ pub fn load(env: &str) -> Result<Cache> {
     let path = path(env);
     let contents = match std::fs::read_to_string(&path) {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            bail!("You are not logged in. Run `chepstow login` to obtain an access token.")
+            bail!("You are not logged in. Run `chepstow auth` to obtain an access token.")
         }
         r => r.with_context(|| format!("Could not read token cache `{}`.", path.display()))?,
     };

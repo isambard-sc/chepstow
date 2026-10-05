@@ -43,7 +43,7 @@ struct Args {
 #[derive(Subcommand)]
 enum Command {
     /// Log in with the device flow and cache the tokens
-    Login,
+    Auth,
     /// Print a valid access token, refreshing it if needed
     Token,
     /// Show the claims in the cached access token
@@ -58,8 +58,8 @@ enum Command {
 fn print_getting_started() {
     println!("Log in to Isambard and get a token for the inference service.\n");
     println!("To get started, run:\n");
-    println!("  chepstow login\n");
-    println!("This prints a link to open in your browser so you can log in.\n");
+    println!("  chepstow auth\n");
+    println!("This prints a link to open in your browser so you can log in!\n");
     println!("Then, to print an access token for the inference service, run:\n");
     println!("  chepstow token\n");
     println!("Available commands:");
@@ -101,7 +101,7 @@ fn valid_token(env: &str) -> Result<String> {
     if c.expires_at - now() >= 60 {
         return Ok(c.access_token);
     }
-    refresh(env, c).context("Your login has expired. Run `chepstow login` to log in again.")
+    refresh(env, c).context("Your login has expired. Run `chepstow auth` to log in again.")
 }
 
 /// Refresh the cached tokens and return the new access token
@@ -137,9 +137,9 @@ fn main() -> Result<()> {
     let base_url = args.base_url.as_deref().unwrap_or(base_url);
 
     match command {
-        Command::Login => {
+        Command::Auth => {
             let ep = oidc::discover(issuer)?;
-            let t = oidc::device_login(&ep, &args.client_id, &args.scope, std::thread::sleep)?;
+            let t = oidc::device_auth(&ep, &args.client_id, &args.scope, std::thread::sleep)?;
             save(env, issuer, &args.client_id, t, None)?;
             eprintln!("Logged in to {issuer}.");
         }

@@ -33,7 +33,7 @@ Install Rust with [rustup](https://rustup.rs).
 cargo build                            # dev: fast to compile, unoptimised, target/debug/chepstow
 cargo build --release                  # prod: optimised and stripped, target/release/chepstow
 cargo run -- whoami                    # build and run a dev binary, passing args after --
-cargo run --release -- --env prod login
+cargo run --release -- --env prod auth
 ```
 
 The build type and `--env` are separate: either binary can log in to either Keycloak. Release builds use the `[profile.release]` settings in `Cargo.toml` (LTO, size-optimised, stripped), which are what CI ships.

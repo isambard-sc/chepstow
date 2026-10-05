@@ -62,7 +62,7 @@ fn tokens(r: &BasicTokenResponse) -> Tokens {
 }
 
 /// Run the device authorization grant. `sleep` is called between polls.
-pub fn device_login(
+pub fn device_auth(
     ep: &Endpoints,
     client_id: &str,
     scope: &str,
@@ -173,7 +173,7 @@ mod tests {
             revocation_endpoint: None,
         };
         let sleeps = RefCell::new(vec![]);
-        let t = device_login(&ep, "chepstow", "openid", |d| sleeps.borrow_mut().push(d))?;
+        let t = device_auth(&ep, "chepstow", "openid", |d| sleeps.borrow_mut().push(d))?;
 
         assert_eq!(t.access_token, "at");
         assert_eq!(t.refresh_token.as_deref(), Some("rt"));

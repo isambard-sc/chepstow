@@ -13,14 +13,14 @@ cargo install --git https://github.com/isambard-sc/chepstow
 ## Use
 
 ```sh
-chepstow login            # print a login URL to open in your browser, then wait for you to log in
+chepstow auth             # print a login URL to open in your browser, then wait for you to log in
 chepstow token            # print a valid access token, refreshing it if needed
 chepstow whoami           # show the token's claims and expiry
 chepstow models           # list the models LiteLLM offers, to check it accepts the token
 chepstow logout           # revoke the refresh token and delete the cache
 ```
 
-`token` prints only the token on stdout. If it can't get a valid token, it exits non-zero and asks you to run `chepstow login` on stderr.
+`token` prints only the token on stdout. If it can't get a valid token, it exits non-zero and asks you to run `chepstow auth` on stderr.
 
 Tokens are cached per environment in your cache directory (for example `~/.cache/chepstow/dev.json` on Linux), readable only by you.
 

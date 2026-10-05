@@ -95,7 +95,7 @@ fn token_fails_quietly_when_refresh_rejected() -> Result<()> {
 
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
-    assert!(String::from_utf8(output.stderr)?.contains("Run `chepstow login`"));
+    assert!(String::from_utf8(output.stderr)?.contains("Run `chepstow auth`"));
     Ok(())
 }
 
@@ -113,7 +113,7 @@ fn token_fails_when_not_logged_in() -> Result<()> {
     assert!(output.stdout.is_empty());
     assert_eq!(
         String::from_utf8(output.stderr)?,
-        "You are not logged in. Run `chepstow login` to obtain an access token.\n"
+        "You are not logged in. Run `chepstow auth` to obtain an access token.\n"
     );
     Ok(())
 }

@@ -59,7 +59,7 @@ Docs: https://docs.litellm.ai/docs/proxy/token_auth
 
 ## Commands
 
-- `chepstow login [--env dev|prod]`
+- `chepstow auth [--env dev|prod]`
   - Runs the device flow: print `verification_uri_complete`, then poll.
     Never open a browser.
   - Handle `authorization_pending`, `slow_down` (+5s interval), `expired_token`
@@ -70,7 +70,7 @@ Docs: https://docs.litellm.ai/docs/proxy/token_auth
   - Prints a valid access token to stdout and nothing else (it's used as a
     credential helper).
   - Refreshes if fewer than 60s are left.
-  - If refresh fails, exit non-zero and print `run chepstow login` on stderr.
+  - If refresh fails, exit non-zero and print `run chepstow auth` on stderr.
     Never start an interactive flow from `token`.
 - `chepstow whoami`
   - Decodes the JWT payload without verifying it (base64url + serde_json).
@@ -144,7 +144,7 @@ src/jwt.rs     unverified payload decode for whoami / expiry
   - expired refresh → non-zero exit, nothing on stdout
   - JWT payload decode
 - Manual, against keycloak-dev once the client exists:
-  - `chepstow login --env dev`
+  - `chepstow auth --env dev`
   - `chepstow whoami` shows `groups`, `short_name` and `client_role`.
 - LiteLLM, once prerequisite 1 is done. Someone with cluster access runs
   `kubectl -n inference-dev port-forward svc/litellm 4000:4000`, then:
