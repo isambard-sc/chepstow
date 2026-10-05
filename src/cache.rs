@@ -3,7 +3,7 @@ use std::io::Write as _;
 use std::os::unix::fs::OpenOptionsExt as _;
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 
 /// Tokens for one environment. Times are unix seconds.
@@ -26,8 +26,12 @@ fn path(env: &str) -> PathBuf {
 
 pub fn load(env: &str) -> Result<Cache> {
     let path = path(env);
-    let contents = std::fs::read_to_string(&path)
-        .with_context(|| format!("No cached token at `{}`.", path.display()))?;
+    let contents = match std::fs::read_to_string(&path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            bail!("You are not logged in. Run `chepstow login` to obtain an access token.")
+        }
+        r => r.with_context(|| format!("Could not read token cache `{}`.", path.display()))?,
+    };
     serde_json::from_str(&contents).context("Could not parse token cache.")
 }
 

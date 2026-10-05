@@ -95,6 +95,25 @@ fn token_fails_quietly_when_refresh_rejected() -> Result<()> {
 
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
-    assert!(String::from_utf8(output.stderr)?.contains("run chepstow login"));
+    assert!(String::from_utf8(output.stderr)?.contains("Run `chepstow login`"));
+    Ok(())
+}
+
+#[test]
+fn token_fails_when_not_logged_in() -> Result<()> {
+    let home = std::env::temp_dir().join(format!("chepstow-{}-none", std::process::id()));
+    let output = Command::new(env!("CARGO_BIN_EXE_chepstow"))
+        .arg("token")
+        .env("HOME", &home)
+        .env("XDG_CACHE_HOME", &home)
+        .env_remove("CHEPSTOW_ENV")
+        .output()?;
+
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8(output.stderr)?,
+        "You are not logged in. Run `chepstow login` to obtain an access token.\n"
+    );
     Ok(())
 }

@@ -1,5 +1,5 @@
 use anyhow::{bail, Context, Result};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory as _, Parser, Subcommand, ValueEnum};
 
 mod cache;
 mod jwt;
@@ -37,20 +37,13 @@ struct Args {
     scope: String,
 
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
 }
 
 #[derive(Subcommand)]
 enum Command {
     /// Log in with the device flow and cache the tokens
-    Login {
-        /// Don't open a web browser
-        #[arg(long)]
-        no_browser: bool,
-        /// Show a QR code for the login URL
-        #[arg(long)]
-        qr: bool,
-    },
+    Login,
     /// Print a valid access token, refreshing it if needed
     Token,
     /// Show the claims in the cached access token
@@ -59,6 +52,22 @@ enum Command {
     Models,
     /// Revoke the refresh token and delete the cache
     Logout,
+}
+
+/// Shown when chepstow is run without a command
+fn print_getting_started() {
+    println!("Log in to Isambard and get a token for the inference service.\n");
+    println!("To get started, run:\n");
+    println!("  chepstow login\n");
+    println!("This prints a link to open in your browser so you can log in.\n");
+    println!("Then, to print an access token for the inference service, run:\n");
+    println!("  chepstow token\n");
+    println!("Available commands:");
+    for sub in Args::command().get_subcommands() {
+        let about = sub.get_about().map(|a| a.to_string()).unwrap_or_default();
+        println!("  chepstow {:<8} {about}", sub.get_name());
+    }
+    println!("\nRun `chepstow help` for more details.");
 }
 
 fn now() -> i64 {
@@ -92,6 +101,11 @@ fn valid_token(env: &str) -> Result<String> {
     if c.expires_at - now() >= 60 {
         return Ok(c.access_token);
     }
+    refresh(env, c).context("Your login has expired. Run `chepstow login` to log in again.")
+}
+
+/// Refresh the cached tokens and return the new access token
+fn refresh(env: &str, c: cache::Cache) -> Result<String> {
     let rt = c.refresh_token.context("No refresh token cached.")?;
     if c.refresh_expires_at.is_some_and(|e| e <= now()) {
         bail!("Refresh token has expired.");
@@ -103,6 +117,10 @@ fn valid_token(env: &str) -> Result<String> {
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    let Some(command) = args.command else {
+        print_getting_started();
+        return Ok(());
+    };
     let (env, issuer, base_url) = match args.env {
         Env::Dev => (
             "dev",
@@ -118,24 +136,17 @@ fn main() -> Result<()> {
     let issuer = args.issuer.as_deref().unwrap_or(issuer);
     let base_url = args.base_url.as_deref().unwrap_or(base_url);
 
-    match args.command {
-        Command::Login { no_browser, qr } => {
+    match command {
+        Command::Login => {
             let ep = oidc::discover(issuer)?;
-            let t = oidc::device_login(
-                &ep,
-                &args.client_id,
-                &args.scope,
-                !no_browser,
-                qr,
-                std::thread::sleep,
-            )?;
+            let t = oidc::device_login(&ep, &args.client_id, &args.scope, std::thread::sleep)?;
             save(env, issuer, &args.client_id, t, None)?;
             eprintln!("Logged in to {issuer}.");
         }
         Command::Token => match valid_token(env) {
             Ok(token) => println!("{token}"),
             Err(e) => {
-                eprintln!("{e:#}\nrun chepstow login");
+                eprintln!("{e:#}");
                 std::process::exit(1);
             }
         },

@@ -7,9 +7,7 @@ use oauth2::{
     RefreshToken, RevocationUrl, Scope, StandardDeviceAuthorizationResponse,
     StandardRevocableToken, TokenResponse as _, TokenUrl,
 };
-use qrcode::{render::unicode, QrCode};
 use serde::Deserialize;
-use url::Url;
 
 /// The endpoints we need from `{issuer}/.well-known/openid-configuration`
 #[derive(Deserialize)]
@@ -68,8 +66,6 @@ pub fn device_login(
     ep: &Endpoints,
     client_id: &str,
     scope: &str,
-    open_browser: bool,
-    show_qr: bool,
     sleep: impl Fn(Duration),
 ) -> Result<Tokens> {
     let http = http_client()?;
@@ -85,21 +81,7 @@ pub fn device_login(
         .verification_uri_complete()
         .context("Did not receive complete verification URI from server.")?
         .secret();
-    if open_browser {
-        if let Err(e) = webbrowser::open(uri) {
-            eprintln!("Could not launch web browser: {e:#}");
-        }
-    }
     eprintln!("Open this URL in your browser:\n{uri}");
-    if show_qr {
-        let qr_url = Url::parse_with_params(uri, &[("qr", "1")])?;
-        let qr = QrCode::new(qr_url.as_str())?
-            .render::<unicode::Dense1x2>()
-            .light_color(unicode::Dense1x2::Light)
-            .dark_color(unicode::Dense1x2::Dark)
-            .build();
-        eprintln!("Or scan this QR code:\n{qr}");
-    }
 
     // Handles authorization_pending, slow_down (+5s), expired_token and access_denied
     let token = client
@@ -191,9 +173,7 @@ mod tests {
             revocation_endpoint: None,
         };
         let sleeps = RefCell::new(vec![]);
-        let t = device_login(&ep, "chepstow", "openid", false, false, |d| {
-            sleeps.borrow_mut().push(d)
-        })?;
+        let t = device_login(&ep, "chepstow", "openid", |d| sleeps.borrow_mut().push(d))?;
 
         assert_eq!(t.access_token, "at");
         assert_eq!(t.refresh_token.as_deref(), Some("rt"));
