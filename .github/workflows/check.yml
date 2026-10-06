@@ -80,7 +80,7 @@ jobs:
         run: rustup toolchain install stable --target="${{ matrix.target }}" --component="clippy,rustfmt"
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
       - name: Install cross
-        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: cross
         if: matrix.cross
