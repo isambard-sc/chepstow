@@ -78,7 +78,7 @@ jobs:
         run: sudo apt install gcc-mingw-w64-x86-64
       - name: Install toolchain
         run: rustup toolchain install stable --target="${{ matrix.target }}" --component="clippy,rustfmt"
-      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - uses: Swatinem/rust-cache@f0d9c3887740aee45f6153b24b3a6b815192ec16 # v2
       - name: Install cross
         uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
         with:
