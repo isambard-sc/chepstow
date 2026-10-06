@@ -7,6 +7,7 @@ Releases are completely automated by GitHub Actions:
 3. Click "Run workflow" in the top right.
 4. Make sure the `main` branch is selected.
 5. In the box below, type `patch`, `minor` or `major`, depending on the [SemVer level](https://semver.org) of release to make.
+   E.G. for the first release, type `0.1.0`.
 6. Press the "Run workflow" button.
 
 This will kick off a series of chained workflows, culminating in a new release appearing on the [Releases page](https://github.com/isambard-sc/chepstow/releases).

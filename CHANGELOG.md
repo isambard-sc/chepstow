@@ -8,4 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
-- `chepstow auth`, `token`, `whoami`, `models` and `logout` for getting an Isambard Keycloak access token for LiteLLM.
+- `chepstow auth` logs in to Isambard Keycloak with the OAuth 2.0 device flow. Choose dev or prod with `--env`.
+- `chepstow token` prints a valid access token for LiteLLM, refreshing it when needed. It works as Claude Code's `apiKeyHelper`.
+- `chepstow whoami` shows the token's claims, `chepstow models` lists the models LiteLLM offers, and `chepstow logout` revokes and deletes the cached tokens.
+- Pre-built binaries for Linux (x86_64 and aarch64, glibc and musl), macOS (Apple silicon and Intel), Windows and FreeBSD.
