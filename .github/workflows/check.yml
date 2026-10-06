@@ -54,7 +54,7 @@ jobs:
             cross: true
           - target: "x86_64-pc-windows-gnu"
             os: "ubuntu-latest"
-            cross: true
+            cross: false  # cross's image has a MinGW too old for std's GetHostNameW
           - target: "aarch64-apple-darwin"
             os: "macOS-latest"
             cross: false
@@ -73,6 +73,9 @@ jobs:
       - name: install MUSL
         if: contains(matrix.target, 'musl')
         run: sudo apt install musl-tools
+      - name: install MinGW
+        if: contains(matrix.target, 'windows-gnu')
+        run: sudo apt install gcc-mingw-w64-x86-64
       - name: Install toolchain
         run: rustup toolchain install stable --target="${{ matrix.target }}" --component="clippy,rustfmt"
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -93,4 +96,4 @@ jobs:
         if: matrix.cross
       - name: Test
         run: cargo test --target="${{ matrix.target }}"
-        if: ${{ ! matrix.cross }}
+        if: ${{ ! matrix.cross && ! contains(matrix.target, 'windows') }}  # Can't run .exe tests on Linux

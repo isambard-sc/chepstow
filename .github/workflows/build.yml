@@ -50,7 +50,7 @@ jobs:
             compress-binary: true
           - target: "x86_64-pc-windows-gnu"
             os: "ubuntu-latest"
-            cross: true
+            cross: false  # cross's image has a MinGW too old for std's GetHostNameW
             output: chepstow.exe
             asset-name: chepstow-windows-x86_64.exe
             compress-binary: false
@@ -81,6 +81,9 @@ jobs:
       - name: install MUSL
         if: contains(matrix.target, 'musl')
         run: sudo apt install musl-tools
+      - name: install MinGW
+        if: contains(matrix.target, 'windows-gnu')
+        run: sudo apt install gcc-mingw-w64-x86-64
       - name: Install toolchain
         run: rustup toolchain install stable --target="${{ matrix.target }}"
       - name: Install cross
