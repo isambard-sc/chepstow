@@ -1,0 +1,38 @@
+[package]
+name = "chepstow"
+version = "0.1.0"
+description = "Log in to Isambard and get a token for the inference service"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/isambard-sc/chepstow/"
+repository = "https://github.com/isambard-sc/chepstow/"
+
+[dependencies]
+anyhow = { version = "1.0", default-features = false, features = ["std"] }
+base64 = { version = "0.22", default-features = false, features = ["std"] }
+chrono = { version = "0.4", default-features = false, features = ["now", "clock"] }
+clap = { version = "4.5", default-features = false, features = ["derive", "color", "help", "usage", "error-context", "suggestions", "env", "std"] }
+dirs = { version = "6.0", default-features = false }
+oauth2 = { version = "5.0", default-features = false, features = ["rustls-tls", "reqwest-blocking"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "blocking", "rustls-tls"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+mockito = "1.5"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[lints.rust]
+unsafe_code = "forbid"
+unused_crate_dependencies = "warn"
+
+[lints.clippy]
+dbg_macro = "deny"
+unwrap_used = "deny"
+expect_used = "deny"

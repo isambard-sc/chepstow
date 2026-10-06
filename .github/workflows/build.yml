@@ -1,0 +1,116 @@
+name: Build artefacts
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build-release:
+    name: "Build release (${{ matrix.target }})"
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: "x86_64-unknown-linux-gnu"
+            os: "ubuntu-latest"
+            cross: false
+            output: chepstow
+            asset-name: chepstow-linux-x86_64
+            compress-binary: true
+          - target: "aarch64-unknown-linux-gnu"
+            os: "ubuntu-latest"
+            cross: true
+            output: chepstow
+            asset-name: chepstow-linux-aarch64
+            compress-binary: true
+          - target: "x86_64-unknown-linux-musl"
+            os: "ubuntu-latest"
+            cross: false
+            output: chepstow
+            asset-name: chepstow-linux-musl-x86_64
+            compress-binary: true
+          - target: "aarch64-unknown-linux-musl"
+            os: "ubuntu-latest"
+            cross: true
+            output: chepstow
+            asset-name: chepstow-linux-musl-aarch64
+            compress-binary: true
+          - target: "x86_64-pc-windows-gnu"
+            os: "ubuntu-latest"
+            cross: false  # cross's image has a MinGW too old for std's GetHostNameW
+            output: chepstow.exe
+            asset-name: chepstow-windows-x86_64.exe
+            compress-binary: false
+          - target: "aarch64-apple-darwin"
+            os: "macOS-latest"
+            cross: false
+            output: chepstow
+            asset-name: chepstow-macos-aarch64
+            compress-binary: false
+          - target: "x86_64-apple-darwin"
+            os: "macOS-latest"
+            cross: true
+            output: chepstow
+            asset-name: chepstow-macos-x86_64
+            compress-binary: false
+          - target: "x86_64-unknown-freebsd"
+            os: "ubuntu-latest"
+            cross: true
+            output: chepstow
+            asset-name: chepstow-freebsd-x86_64
+            compress-binary: false
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ inputs.ref || '' }}
+          fetch-depth: 0  # This is needed so that git-describe works properly to set the version
+          persist-credentials: false
+      - name: install MUSL
+        if: contains(matrix.target, 'musl')
+        run: sudo apt install musl-tools
+      - name: install MinGW
+        if: contains(matrix.target, 'windows-gnu')
+        run: sudo apt install gcc-mingw-w64-x86-64
+      - name: Install toolchain
+        run: rustup toolchain install stable --target="${{ matrix.target }}"
+      - name: Install cross
+        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
+        with:
+          tool: cross
+        if: matrix.cross
+      - name: Build
+        run: cargo build --target="${{ matrix.target }}" --release
+        if: ${{ ! matrix.cross }}
+      - name: Build
+        run: cross build --target="${{ matrix.target }}" --release
+        if: matrix.cross
+      - name: Rename assets
+        run: cp "target/${{ matrix.target }}/release/${{ matrix.output }}" "${{ matrix.asset-name }}"
+      - name: Compress output
+        run: |
+          wget "https://github.com/upx/upx/releases/download/v${UPX_VERSION}/upx-${UPX_VERSION}-amd64_linux.tar.xz"
+          echo "${UPX_HASH}" "upx-${UPX_VERSION}-amd64_linux.tar.xz" | sha256sum --check
+          tar xvf "upx-${UPX_VERSION}-amd64_linux.tar.xz"
+          "upx-${UPX_VERSION}-amd64_linux/upx" "${{ matrix.asset-name }}"
+        env:
+          UPX_VERSION: "5.1.1"
+          UPX_HASH: "1ff660454227861e00772f743f66b900072116b9dc24f6ee28b97cce88a7828a"
+        if: ${{ matrix.compress-binary }}
+      - name: Store build artefacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          path: ${{ matrix.asset-name }}
+          archive: false

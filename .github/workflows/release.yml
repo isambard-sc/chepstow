@@ -1,0 +1,177 @@
+name: Release
+run-name: Release - ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The new version, can be "patch", "minor", "major", or a valid semver string
+        type: string
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}
+
+permissions: {}
+
+jobs:
+  check-inputs:
+    name: Check inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check release branch
+        if: github.ref_name != 'main'
+        run: |
+          echo "::error::Release must be made on the main branch"
+          exit 1
+      - name: Check version format
+        shell: bash
+        if: ${{ !contains(fromJSON('["major", "minor", "patch"]'), inputs.version) }}
+        run: |
+          if ! [[ "${INPUTS_VERSION}" =~ [[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+ ]]; then
+            echo "::error::Version string must be a valid semver string"
+            exit 1
+          fi
+        env:
+          INPUTS_VERSION: ${{ inputs.version }}
+
+  check:
+    name: Check
+    needs: check-inputs
+    uses: ./.github/workflows/check.yml
+    with:
+      ref: "${{ github.sha }}"
+    permissions:
+      contents: read
+
+  tag-release:
+    name: Tag release
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to write the tag to the repo
+    outputs:
+      ref: "${{ steps.get_version.outputs.version }}"
+      changelog: "${{ steps.changelog.outputs.changelog }}"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.ref }}  # Use ref here since we must commit on a branch
+          ssh-key: ${{secrets.DEPLOY_KEY}}
+          persist-credentials: true
+      - name: Install kacl
+        run: |
+          python -m venv ~/venv
+          ~/venv/bin/pip install python-kacl
+      - name: Install toolchain
+        run: rustup toolchain install stable
+      - name: Install cargo-edit tool
+        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
+        with:
+          tool: cargo-edit
+      - name: Update version string
+        run: |
+          echo Version input is "${INPUTS_VERSION}"
+          if [ "${VERSION_IS_BUMP}" = 'true' ]; then
+            echo 'Setting based on update spec'
+            cargo set-version --bump "${INPUTS_VERSION}"
+          elif [ -n "${INPUTS_VERSION}" ]; then
+            echo 'Updating based on explicit version'
+            cargo set-version "${INPUTS_VERSION}"
+          fi
+          git add Cargo.toml Cargo.lock
+        env:
+          VERSION_IS_BUMP: ${{ contains(fromJSON('["major", "minor", "patch"]'), inputs.version) }}
+          INPUTS_VERSION: ${{ inputs.version }}
+      - name: Save the version
+        id: get_version
+        run: echo version="$(cargo metadata --format-version 1 --no-deps | jq --raw-output '.packages[0].version')" >> "${GITHUB_OUTPUT}"
+      - name: Update version in changelog
+        id: changelog
+        run: |
+          ~/venv/bin/kacl-cli release --allow-dirty --no-commit --modify --link "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${STEPS_GET_VERSION_OUTPUTS_VERSION}" "${STEPS_GET_VERSION_OUTPUTS_VERSION}"
+          git add CHANGELOG.md
+          {
+            echo 'changelog<<EOF'
+            ~/venv/bin/kacl-cli get "${STEPS_GET_VERSION_OUTPUTS_VERSION}" | tail -n+2
+            echo EOF
+          }  >> "${GITHUB_OUTPUT}"
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          STEPS_GET_VERSION_OUTPUTS_VERSION: ${{ steps.get_version.outputs.version }}
+      - name: Tag release
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git commit -m "Release ${STEPS_GET_VERSION_OUTPUTS_VERSION}"
+          git tag -a -m "Release ${STEPS_GET_VERSION_OUTPUTS_VERSION}" "${STEPS_GET_VERSION_OUTPUTS_VERSION}"
+          git push --atomic --tags origin HEAD
+        env:
+          STEPS_GET_VERSION_OUTPUTS_VERSION: ${{ steps.get_version.outputs.version }}
+
+  build-release:
+    name: "Build release"
+    needs: tag-release
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.tag-release.outputs.ref }}
+    permissions:
+      contents: read
+
+  attest:
+    name: Attest
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      attestations: write  # Needed to persist the attestations
+      id-token: write  # Needed to mint the OIDC token necessary to request a Sigstore signing certificate
+      artifact-metadata: write  # Needed to create the artifact storage record
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - name: Install toolchain
+        run: rustup toolchain install stable
+      - name: Install cargo-sbom
+        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2.75.27
+        with:
+          tool: cargo-sbom
+      - name: Generate SBOM
+        run: cargo sbom --output-format=spdx_json_2_3 > sbom.spdx.json
+      - name: Fetch release artefacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: chepstow-*
+          merge-multiple: true
+          skip-decompress: true
+      - name: Attest SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4
+        with:
+          subject-path: chepstow-*
+          sbom-path: sbom.spdx.json
+      - name: Store SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sbom.spdx.json
+          path: sbom.spdx.json
+
+  make-release:
+    name: Make release ${{ needs.tag-release.outputs.ref }}
+    needs: [build-release, tag-release, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to write the release information
+    steps:
+      - name: Fetch release artefacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: chepstow-*
+          merge-multiple: true
+          skip-decompress: true
+      - name: Release
+        run: gh release create "${TAG_NAME}" chepstow-* --notes "${NOTES}" --repo "${GITHUB_REPOSITORY}"
+        env:
+          TAG_NAME: ${{ needs.tag-release.outputs.ref }}
+          NOTES: ${{ needs.tag-release.outputs.changelog }}
+          GH_TOKEN: ${{ github.token }}
