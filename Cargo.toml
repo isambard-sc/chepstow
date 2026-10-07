@@ -9,7 +9,7 @@ repository = "https://github.com/isambard-sc/chepstow/"
 
 [dependencies]
 anyhow = { version = "1.0", default-features = false, features = ["std"] }
-base64 = { version = "0.22", default-features = false, features = ["std"] }
+base64 = { version = "0.23", default-features = false, features = ["std"] }
 chrono = { version = "0.4", default-features = false, features = ["now", "clock"] }
 clap = { version = "4.5", default-features = false, features = ["derive", "color", "help", "usage", "error-context", "suggestions", "env", "std"] }
 dirs = { version = "6.0", default-features = false }
