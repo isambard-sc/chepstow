@@ -16,7 +16,7 @@ enum Env {
 /// Log in to Isambard and get a token for the inference service
 struct Args {
     /// Environment, which sets the default issuer and base URL
-    #[arg(long, env = "CHEPSTOW_ENV", value_enum, default_value_t = Env::Dev, global = true)]
+    #[arg(long, env = "CHEPSTOW_ENV", value_enum, default_value_t = Env::Prod, global = true)]
     env: Env,
     /// OIDC issuer URL
     #[arg(long, env = "CHEPSTOW_ISSUER", global = true)]
@@ -29,7 +29,7 @@ struct Args {
         global = true
     )]
     client_id: String,
-    /// LiteLLM base URL
+    /// Inference service base URL
     #[arg(long, env = "CHEPSTOW_BASE_URL", global = true)]
     base_url: Option<String>,
     /// OAuth scopes to request, space separated
@@ -48,7 +48,7 @@ enum Command {
     Token,
     /// Show the claims in the cached access token
     Whoami,
-    /// List the models LiteLLM offers, to check it accepts the token
+    /// List the models the inference service offers, to check it accepts the token
     Models,
     /// Revoke the refresh token and delete the cache
     Logout,

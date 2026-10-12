@@ -1,6 +1,6 @@
 # chepstow
 
-Rust CLI that logs in to Isambard Keycloak with the OAuth 2.0 device flow (RFC 8628) and prints an access-token JWT for LiteLLM. User-facing docs are in README.md; releases in RELEASE.md.
+Rust CLI that logs in to Isambard Keycloak with the OAuth 2.0 device flow (RFC 8628) and prints an access-token JWT for the inference service. User-facing docs are in README.md; releases in RELEASE.md.
 
 **Keep the code minimal.** Prefer the smallest change that works. Don't add crates, abstractions or workarounds for server-side problems (for example token lifetime or routing).
 
@@ -18,7 +18,8 @@ tests/cli.rs   runs the binary against mockito
 
 - Blocking reqwest + rustls, no async runtime. `default-features = false` on every crate.
 - Endpoints come from `{issuer}/.well-known/openid-configuration`. They are never hardcoded.
-- Public client: `AuthType::RequestBody`, no secret. The `chepstow` client ID is a placeholder until the real Keycloak client exists. Don't use the confidential `litellm` client.
+- Public client: `AuthType::RequestBody`, no secret. The `chepstow` client ID is a placeholder until the real Keycloak client exists.
+- `--env` picks dev or prod when the binary runs, not when it's built. The default is prod.
 - The oauth2 crate handles polling (`authorization_pending`, `slow_down` +5s, `expired_token`, `access_denied`). The sleep function is injected so tests don't wait.
 - `expires_at` and `refresh_expires_at` come from each token's JWT `exp` claim. Keycloak refresh tokens are JWTs, and offline tokens have no expiry, giving `None`. Times are unix seconds.
 - `token` prints only the token on stdout. On failure it prints an error telling the user to run `chepstow auth` on stderr and exits 1, and never starts a login. Other human-readable output also goes to stderr.
@@ -37,10 +38,3 @@ tests/cli.rs   runs the binary against mockito
   ```
 - Add user-visible changes to the `Unreleased` section of CHANGELOG.md (Keep a Changelog format; CI checks it with kacl).
 - CI is in `.github/workflows/` (check, build, release, and actions for actionlint + zizmor), ported from Isambard's clifton. Actions are pinned by SHA. Dependabot (`.github/dependabot.yml`) updates cargo weekly and actions monthly.
-
-## Not yet working end to end
-
-These are server-side and out of scope for this repo. See README "Server-side prerequisites".
-- LiteLLM JWT auth is not enabled in brics-inference.
-- The Keycloak public client doesn't exist yet.
-- The nadir front door doesn't route JWTs to LiteLLM. Test through `kubectl port-forward` instead.
