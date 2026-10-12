@@ -8,8 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
-- Simplified docs.
+- Removed the `--issuer`, `--client-id`, `--base-url` and `--scope` options. They now come from `--env`, which is hidden from `--help`.
 - `--env` now defaults to `prod`. Use `--env dev` for the dev environment.
+- `chepstow whoami` shows `selected_group` instead of `client_role`.
+- Simplified docs.
 
 ## [0.2.0] - 2026-10-07
 

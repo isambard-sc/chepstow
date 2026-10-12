@@ -5,6 +5,9 @@ mod cache;
 mod jwt;
 mod oidc;
 
+/// Public Keycloak client with the device grant enabled
+const CLIENT_ID: &str = "chepstow";
+
 #[derive(Clone, Copy, ValueEnum)]
 enum Env {
     Dev,
@@ -15,26 +18,9 @@ enum Env {
 #[command(version, about)]
 /// Log in to Isambard and get a token for the inference service
 struct Args {
-    /// Environment, which sets the default issuer and base URL
-    #[arg(long, env = "CHEPSTOW_ENV", value_enum, default_value_t = Env::Prod, global = true)]
+    /// Environment, which sets the issuer and base URL
+    #[arg(long, env = "CHEPSTOW_ENV", value_enum, default_value_t = Env::Prod, global = true, hide = true)]
     env: Env,
-    /// OIDC issuer URL
-    #[arg(long, env = "CHEPSTOW_ISSUER", global = true)]
-    issuer: Option<String>,
-    /// OIDC client ID
-    #[arg(
-        long,
-        env = "CHEPSTOW_CLIENT_ID",
-        default_value = "chepstow",
-        global = true
-    )]
-    client_id: String,
-    /// Inference service base URL
-    #[arg(long, env = "CHEPSTOW_BASE_URL", global = true)]
-    base_url: Option<String>,
-    /// OAuth scopes to request, space separated
-    #[arg(long, env = "CHEPSTOW_SCOPE", default_value = "openid", global = true)]
-    scope: String,
 
     #[command(subcommand)]
     command: Option<Command>,
@@ -133,14 +119,12 @@ fn main() -> Result<()> {
             "https://apps.isambard.ac.uk/inference",
         ),
     };
-    let issuer = args.issuer.as_deref().unwrap_or(issuer);
-    let base_url = args.base_url.as_deref().unwrap_or(base_url);
 
     match command {
         Command::Auth => {
             let ep = oidc::discover(issuer)?;
-            let t = oidc::device_auth(&ep, &args.client_id, &args.scope, std::thread::sleep)?;
-            save(env, issuer, &args.client_id, t, None)?;
+            let t = oidc::device_auth(&ep, CLIENT_ID, "openid", std::thread::sleep)?;
+            save(env, issuer, CLIENT_ID, t, None)?;
             eprintln!("Logged in to {issuer}.");
         }
         Command::Token => match valid_token(env) {
@@ -153,13 +137,13 @@ fn main() -> Result<()> {
         Command::Whoami => {
             let c = cache::load(env)?;
             let claims = jwt::payload(&c.access_token)?;
-            for name in ["iss", "aud", "short_name", "groups", "client_role"] {
+            for name in ["iss", "aud", "short_name", "groups", "selected_group"] {
                 let value = match &claims[name] {
                     serde_json::Value::Null => "<missing>".to_string(),
                     serde_json::Value::String(s) => s.clone(),
                     v => v.to_string(),
                 };
-                println!("{name:<12} {value}");
+                println!("{name:<15} {value}");
             }
             let exp = chrono::DateTime::from_timestamp(c.expires_at, 0)
                 .context("Invalid expiry time.")?
@@ -171,7 +155,7 @@ fn main() -> Result<()> {
                 "expired".to_string()
             };
             println!(
-                "{:<12} {} ({left})",
+                "{:<15} {} ({left})",
                 "exp",
                 exp.format("%Y-%m-%d %H:%M:%S %:z")
             );

@@ -19,11 +19,11 @@ tests/cli.rs   runs the binary against mockito
 - Blocking reqwest + rustls, no async runtime. `default-features = false` on every crate.
 - Endpoints come from `{issuer}/.well-known/openid-configuration`. They are never hardcoded.
 - Public client: `AuthType::RequestBody`, no secret. The `chepstow` client ID is a placeholder until the real Keycloak client exists.
-- `--env` picks dev or prod when the binary runs, not when it's built. The default is prod.
+- `--env` picks dev or prod when the binary runs, not when it's built. The default is prod. `--env` is hidden from `--help`, and the issuer, base URL, client ID and scope have no flags.
 - The oauth2 crate handles polling (`authorization_pending`, `slow_down` +5s, `expired_token`, `access_denied`). The sleep function is injected so tests don't wait.
 - `expires_at` and `refresh_expires_at` come from each token's JWT `exp` claim. Keycloak refresh tokens are JWTs, and offline tokens have no expiry, giving `None`. Times are unix seconds.
 - `token` prints only the token on stdout. On failure it prints an error telling the user to run `chepstow auth` on stderr and exits 1, and never starts a login. Other human-readable output also goes to stderr.
-- `token` refreshes using the issuer and client ID stored in the cache, not the current flags.
+- `token` refreshes using the issuer and client ID stored in the cache.
 - `whoami` reads the cache without refreshing. Missing claims print as `<missing>` so a missing Keycloak mapper is obvious.
 - `logout` warns but still deletes the cache if revocation fails.
 

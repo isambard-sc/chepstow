@@ -4,7 +4,16 @@ Get an access token for the Isambard (BriCS) inference service.
 
 ## Install
 
-Download a binary from the [releases page](https://github.com/isambard-sc/chepstow/releases).
+Download the binary for your platform from the [releases page](https://github.com/isambard-sc/chepstow/releases), make it executable and put it on your `PATH`. For example, on Linux:
+
+```sh
+curl -L -o chepstow https://github.com/isambard-sc/chepstow/releases/latest/download/chepstow-linux-x86_64
+chmod +x chepstow
+mv chepstow ~/.local/bin/
+```
+
+On macOS, download `chepstow-macos-aarch64` (Apple silicon) or `chepstow-macos-x86_64` (Intel). If macOS blocks it, run `xattr -d com.apple.quarantine chepstow`.
+On Windows, download `chepstow-windows-x86_64.exe`.
 
 ## Use
 
@@ -30,6 +39,7 @@ export OPENAI_API_KEY=$(chepstow token)
 ```
 
 or opencode's `{env:OPENAI_API_KEY}` / `{file:...}` in its config.
+The token is read once, so when it expires, run `chepstow token` again and restart the tool.
 
 ## Claude Code
 
