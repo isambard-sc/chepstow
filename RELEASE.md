@@ -34,7 +34,6 @@ If the `DEPLOY_KEY` secret is missing, the push falls back to the Actions token 
 3. Click **Run workflow** (top right of the list of runs).
 4. Make sure the `main` branch is selected.
 5. In the version box, type `patch`, `minor` or `major`, depending on the [SemVer level](https://semver.org) of the release, or an exact version.
-   For the first release, type `0.1.0`. Cargo.toml is already 0.1.0, so `major` would make 1.0.0.
 6. Click the green **Run workflow** button.
 
 The release appears on the [Releases page](https://github.com/isambard-sc/chepstow/releases) once the run finishes, after about 15 minutes.

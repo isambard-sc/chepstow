@@ -33,7 +33,7 @@ fn token_near_expiry(test: &str, server: &mut mockito::Server) -> Result<(Output
     }
     .join("chepstow");
     std::fs::create_dir_all(&cache_dir)?;
-    let cache_file = cache_dir.join("dev.json");
+    let cache_file = cache_dir.join("prod.json");
     let now = chrono::Utc::now().timestamp();
     let cache = serde_json::json!({
         "issuer": issuer,
