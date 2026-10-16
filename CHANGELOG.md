@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+### Changed
+
+- Shortened the README to install, `chepstow auth` and `chepstow token`. It no longer covers the other subcommands, the cache location, or setup for opencode and Claude Code.
+
 ## [0.3.0] - 2026-10-12
 
 ### Changed
