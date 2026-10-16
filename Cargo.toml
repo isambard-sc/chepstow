@@ -1,6 +1,6 @@
 [package]
 name = "chepstow"
-version = "0.3.0"
+version = "0.3.1"
 description = "Log in to Isambard and get a token for the inference service"
 edition = "2021"
 license = "MIT"

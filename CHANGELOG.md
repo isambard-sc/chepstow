@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Unreleased
 
+## [0.3.1] - 2026-10-16
+
 ### Changed
 
 - Shortened the README to install, `chepstow auth` and `chepstow token`. It no longer covers the other subcommands, the cache location, or setup for opencode and Claude Code.
@@ -28,5 +30,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `chepstow whoami` shows the token's claims, `chepstow models` lists the models the inference service offers, and `chepstow logout` revokes and deletes the cached tokens.
 - Pre-built binaries for Linux (x86_64 and aarch64, glibc and musl), macOS (Apple silicon and Intel), Windows and FreeBSD.
 
+[0.3.1]: https://github.com/isambard-sc/chepstow/releases/tag/0.3.1
 [0.3.0]: https://github.com/isambard-sc/chepstow/releases/tag/0.3.0
 [0.2.0]: https://github.com/isambard-sc/chepstow/releases/tag/0.2.0
